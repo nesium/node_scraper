@@ -1,6 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var url = require('url');
+var Promise = require('bluebird');
 
 var parserDir = path.join(__dirname, 'parsers');
 var parsers = {};
@@ -22,8 +23,7 @@ fs.readdirSync(parserDir).forEach(function(file) {
 });
 
 
-
-module.exports = function(theURL, cb) {
+module.exports = function(theURL) {
   var parsedURL = url.parse(theURL, true);
   
   var host = parsedURL.host.toLowerCase();
@@ -36,6 +36,18 @@ module.exports = function(theURL, cb) {
   if (parser == null) {
     parser = parsers['*'];
   }
-  
-  parser.handleURL(parsedURL, cb);
+
+  return new Promise(function(resolve, reject) {
+    parser.handleURL(parsedURL, function(err, url, type, meta) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve({
+          url: url,
+          type: type,
+          meta: meta
+        });
+      }
+    });
+  });
 };
